@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Inventario - Bodega</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: #f8fafc; color: #1e293b; padding: 12px; }
+    .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 16px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    h2 { text-align: center; margin-bottom: 14px; font-size: 1.25rem; color: #0f172a; }
+
+    .tabs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; background: #e2e8f0; padding: 4px; border-radius: 10px; margin-bottom: 16px; }
+    .tab-btn { padding: 10px 4px; border: none; background: transparent; font-weight: 600; font-size: 0.8rem; border-radius: 8px; cursor: pointer; color: #475569; text-align: center; }
+    .tab-btn.active { background: #fff; color: #2563eb; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .form-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    label { font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: -6px; }
+    input { padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 1rem; outline: none; background: #fff; }
+    input:focus { border-color: #2563eb; }
+
+    .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; text-align: center; }
+    .btn-load { background: #2563eb; color: white; }
+    .btn-unload { background: #d97706; color: white; }
+    .btn-export { background: #16a34a; color: white; margin-top: 12px; }
+    .btn-danger { background: #ef4444; color: white; font-size: 0.75rem; padding: 6px 10px; border-radius: 6px; }
+
+    .sub-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .sub-tab { flex: 1; padding: 8px; font-size: 0.75rem; border: 1px solid #cbd5e1; background: #f1f5f9; border-radius: 8px; font-weight: 600; cursor: pointer; text-align: center; }
+    .sub-tab.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+
+    .date-group-title { font-size: 0.9rem; font-weight: bold; color: #334155; margin: 14px 0 6px 4px; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; }
+    .list { list-style: none; max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .item-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .badge { display: inline-block; padding: 2px 8px; font-size: 0.7rem; font-weight: bold; border-radius: 4px; margin-bottom: 4px; }
+    .badge-load { background: #dbeafe; color: #1e40af; }
+    .badge-unload { background: #fef3c7; color: #92400e; }
+    
+    .item-info strong { font-size: 1rem; color: #0f172a; display: block; }
+    .item-info span { font-size: 0.8rem; color: #64748b; display: block; }
+    .empty-msg { text-align: center; color: #94a3b8; padding: 30px; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>📦 Control de Bodega</h2>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchView('load')">📥 Cargar</button>
+    <button class="tab-btn" onclick="switchView('unload')">📤 Descargar</button>
+    <button class="tab-btn" onclick="switchView('pending')">📋 Jornada</button>
+  </div>
+
+  <div id="view-load" class="view active">
+    <div class="form-group">
+      <label>Código del Producto</label>
+      <input type="text" id="load-code" placeholder="Ej. A-1024" autocomplete="off">
+      <label>Cantidad</label>
+      <input type="number" id="load-qty" placeholder="Ej. 15" inputmode="numeric">
+      <label>Pasillo</label>
+      <input type="text" id="load-aisle" placeholder="Ej. Pasillo 3">
+      <label>Rack</label>
+      <input type="text" id="load-rack" placeholder="Ej. Rack B">
+      <label>Viga</label>
+      <input type="text" id="load-beam" placeholder="Ej. Viga 2">
+    </div>
+    <button class="btn btn-load" onclick="addItem('load')">REGISTRAR CARGA</button>
+  </div>
+
+  <div id="view-unload" class="view">
+    <div class="form-group">
+      <label>Código del Producto</label>
+      <input type="text" id="unload-code" placeholder="Ej. A-1024" autocomplete="off">
+      <label>Cantidad</label>
+      <input type="number" id="unload-qty" placeholder="Ej. 5" inputmode="numeric">
+      <label>Pasillo</label>
+      <input type="text" id="unload-aisle" placeholder="Ej. Pasillo 3">
+      <label>Rack</label>
+      <input type="text" id="unload-rack" placeholder="Ej. Rack B">
+      <label>Viga</label>
+      <input type="text" id="unload-beam" placeholder="Ej. Viga 2">
+    </div>
+    <button class="btn btn-unload" onclick="addItem('unload')">REGISTRAR DESCARGA</button>
+  </div>
+
+  <div id="view-pending" class="view">
+    <div class="sub-tabs">
+      <button class="sub-tab active" onclick="setFilter('all', this)">Todos</button>
+      <button class="sub-tab" onclick="setFilter('load', this)">Pend. Cargar</button>
+      <button class="sub-tab" onclick="setFilter('unload', this)">Pend. Descargar</button>
+    </div>
+
+    <div class="list" id="itemList"></div>
+    <button class="btn btn-export" onclick="exportCSV()">📥 Descargar Reporte CSV</button>
+  </div>
+</div>
+
+<script>
+  let items = JSON.parse(localStorage.getItem("bodega_items")) || [];
+  let currentFilter = 'all';
+
+  function switchView(viewName) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+    
+    if(viewName === 'load') {
+      document.getElementById('view-load').classList.add('active');
+      document.querySelectorAll('.tab-btn')[0].classList.add('active');
+    } else if(viewName === 'unload') {
+      document.getElementById('view-unload').classList.add('active');
+      document.querySelectorAll('.tab-btn')[1].classList.add('active');
+    } else if(viewName === 'pending') {
+      document.getElementById('view-pending').classList.add('active');
+      document.querySelectorAll('.tab-btn')[2].classList.add('active');
+      renderList();
+    }
+  }
+
+  function addItem(type) {
+    const code = document.getElementById(`${type}-code`).value.trim();
+    const qty = document.getElementById(`${type}-qty`).value.trim();
+    const aisle = document.getElementById(`${type}-aisle`).value.trim();
+    const rack = document.getElementById(`${type}-rack`).value.trim();
+    const beam = document.getElementById(`${type}-beam`).value.trim();
+
+    if(!code || !qty || !aisle || !rack || !beam) {
+      alert("Por favor completa todos los campos.");
+      return;
+    }
+
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0,10);
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const newItem = {
+      id: Date.now(),
+      type: type,
+      code: code,
+      qty: qty,
+      aisle: aisle,
+      rack: rack,
+      beam: beam,
+      date: dateStr,
+      time: timeStr
+    };
+
+    items.unshift(newItem);
+    localStorage.setItem("bodega_items", JSON.stringify(items));
+
+    document.getElementById(`${type}-code`).value = '';
+    document.getElementById(`${type}-qty`).value = '';
+    document.getElementById(`${type}-aisle`).value = '';
+    document.getElementById(`${type}-rack`).value = '';
+    document.getElementById(`${type}-beam`).value = '';
+
+    alert("¡Registrado con éxito!");
+  }
+
+  function deleteItem(id) {
+    if(confirm("¿Deseas eliminar este registro de la lista?")) {
+      items = items.filter(i => i.id !== id);
+      localStorage.setItem("bodega_items", JSON.stringify(items));
+      renderList();
+    }
+  }
+
+  function setFilter(filter, el) {
+    currentFilter = filter;
+    document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderList();
+  }
+
+  function renderList() {
+    const container = document.getElementById('itemList');
+    container.innerHTML = '';
+
+    let filtered = items;
+    if(currentFilter !== 'all') {
+      filtered = items.filter(i => i.type === currentFilter);
+    }
+
+    if(filtered.length === 0) {
+      container.innerHTML = `<div class="empty-msg">No hay registros pendientes en esta categoría.</div>`;
+      return;
+    }
+
+    const grouped = {};
+    filtered.forEach(item => {
+      const d = item.date || 'Anteriores';
+      if (!grouped[d]) grouped[d] = [];
+      grouped[d].push(item);
+    });
+
+    const todayStr = new Date().toISOString().slice(0,10);
+
+    Object.keys(grouped).sort().reverse().forEach(date => {
+      let title = date;
+      if (date === todayStr) title = "📅 Hoy (" + date + ")";
+      else title = "📅 Fecha anterior (" + date + ")";
+
+      const titleDiv = document.createElement('div');
+      titleDiv.className = 'date-group-title';
+      titleDiv.innerText = title;
+      container.appendChild(titleDiv);
+
+      grouped[date].forEach(i => {
+        const li = document.createElement('li');
+        li.className = 'item-card';
+        const badgeText = i.type === 'load' ? '📥 CARGA' : '📤 DESCARGA';
+        const badgeClass = i.type === 'load' ? 'badge-load' : 'badge-unload';
+
+        li.innerHTML = `
+          <div class="item-info">
+            <span class="badge ${badgeClass}">${badgeText} (${i.time})</span>
+            <strong>Código: ${i.code} (Cant: ${i.qty})</strong>
+            <span>Pasillo: ${i.aisle} | Rack: ${i.rack} | Viga: ${i.beam}</span>
+          </div>
+          <button class="btn-danger" onclick="deleteItem(${i.id})">Borrar</button>
+        `;
+        container.appendChild(li);
+      });
+    });
+  }
+
+  function exportCSV() {
+    if(items.length === 0) {
+      alert("No hay datos para exportar.");
+      return;
+    }
+    let csv = "data:text/csv;charset=utf-8,Fecha,Tipo,Codigo,Cantidad,Pasillo,Rack,Viga,Hora\n";
+    items.forEach(i => {
+      csv += `${i.date || ''},${i.type === 'load' ? 'Carga' : 'Descarga'},${i.code},${i.qty},${i.aisle},${i.rack},${i.beam},${i.time}\n`;
+    });
+    const encodedUri = encodeURI(csv);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `jornada_bodega_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+</script>
+
+</body>
+</html>
