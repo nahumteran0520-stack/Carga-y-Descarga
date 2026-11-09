@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control de Inventario - Bodega</title>
+  <title>Control de Inventario</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
     body { background-color: #f8fafc; color: #1e293b; padding: 12px; }
     .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 16px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
     h2 { text-align: center; margin-bottom: 14px; font-size: 1.25rem; color: #0f172a; }
 
+    /* Pestañas */
     .tabs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; background: #e2e8f0; padding: 4px; border-radius: 10px; margin-bottom: 16px; }
     .tab-btn { padding: 10px 4px; border: none; background: transparent; font-weight: 600; font-size: 0.8rem; border-radius: 8px; cursor: pointer; color: #475569; text-align: center; }
     .tab-btn.active { background: #fff; color: #2563eb; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -17,6 +18,7 @@
     .view { display: none; }
     .view.active { display: block; }
 
+    /* Formularios */
     .form-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
     label { font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: -6px; }
     input { padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 1rem; outline: none; background: #fff; }
@@ -28,11 +30,11 @@
     .btn-export { background: #16a34a; color: white; margin-top: 12px; }
     .btn-danger { background: #ef4444; color: white; font-size: 0.75rem; padding: 6px 10px; border-radius: 6px; }
 
+    /* Filtros y listados */
     .sub-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
     .sub-tab { flex: 1; padding: 8px; font-size: 0.75rem; border: 1px solid #cbd5e1; background: #f1f5f9; border-radius: 8px; font-weight: 600; cursor: pointer; text-align: center; }
     .sub-tab.active { background: #0f172a; color: #fff; border-color: #0f172a; }
 
-    .date-group-title { font-size: 0.9rem; font-weight: bold; color: #334155; margin: 14px 0 6px 4px; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; }
     .list { list-style: none; max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
     .item-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; }
     .badge { display: inline-block; padding: 2px 8px; font-size: 0.7rem; font-weight: bold; border-radius: 4px; margin-bottom: 4px; }
@@ -47,46 +49,58 @@
 <body>
 
 <div class="container">
-  <h2>📦 Control de Bodega</h2>
+  <h2>📦 Control de Inventario</h2>
 
+  <!-- Pestañas Principales -->
   <div class="tabs">
     <button class="tab-btn active" onclick="switchView('load')">📥 Cargar</button>
     <button class="tab-btn" onclick="switchView('unload')">📤 Descargar</button>
     <button class="tab-btn" onclick="switchView('pending')">📋 Jornada</button>
   </div>
 
+  <!-- VISTA 1: CARGAR -->
   <div id="view-load" class="view active">
     <div class="form-group">
       <label>Código del Producto</label>
       <input type="text" id="load-code" placeholder="Ej. A-1024" autocomplete="off">
+      
       <label>Cantidad</label>
       <input type="number" id="load-qty" placeholder="Ej. 15" inputmode="numeric">
+      
       <label>Pasillo</label>
       <input type="text" id="load-aisle" placeholder="Ej. Pasillo 3">
+      
       <label>Rack</label>
       <input type="text" id="load-rack" placeholder="Ej. Rack B">
+      
       <label>Viga</label>
       <input type="text" id="load-beam" placeholder="Ej. Viga 2">
     </div>
     <button class="btn btn-load" onclick="addItem('load')">REGISTRAR CARGA</button>
   </div>
 
+  <!-- VISTA 2: DESCARGAR -->
   <div id="view-unload" class="view">
     <div class="form-group">
       <label>Código del Producto</label>
       <input type="text" id="unload-code" placeholder="Ej. A-1024" autocomplete="off">
+      
       <label>Cantidad</label>
       <input type="number" id="unload-qty" placeholder="Ej. 5" inputmode="numeric">
+      
       <label>Pasillo</label>
       <input type="text" id="unload-aisle" placeholder="Ej. Pasillo 3">
+      
       <label>Rack</label>
       <input type="text" id="unload-rack" placeholder="Ej. Rack B">
+      
       <label>Viga</label>
       <input type="text" id="unload-beam" placeholder="Ej. Viga 2">
     </div>
     <button class="btn btn-unload" onclick="addItem('unload')">REGISTRAR DESCARGA</button>
   </div>
 
+  <!-- VISTA 3: LISTA / JORNADA -->
   <div id="view-pending" class="view">
     <div class="sub-tabs">
       <button class="sub-tab active" onclick="setFilter('all', this)">Todos</button>
@@ -94,7 +108,7 @@
       <button class="sub-tab" onclick="setFilter('unload', this)">Pend. Descargar</button>
     </div>
 
-    <div class="list" id="itemList"></div>
+    <ul class="list" id="itemList"></ul>
     <button class="btn btn-export" onclick="exportCSV()">📥 Descargar Reporte CSV</button>
   </div>
 </div>
@@ -132,25 +146,21 @@
       return;
     }
 
-    const now = new Date();
-    const dateStr = now.toISOString().slice(0,10);
-    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
     const newItem = {
       id: Date.now(),
-      type: type,
+      type: type, // 'load' o 'unload'
       code: code,
       qty: qty,
       aisle: aisle,
       rack: rack,
       beam: beam,
-      date: dateStr,
-      time: timeStr
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
     items.unshift(newItem);
     localStorage.setItem("bodega_items", JSON.stringify(items));
 
+    // Limpiar campos
     document.getElementById(`${type}-code`).value = '';
     document.getElementById(`${type}-qty`).value = '';
     document.getElementById(`${type}-aisle`).value = '';
@@ -176,8 +186,8 @@
   }
 
   function renderList() {
-    const container = document.getElementById('itemList');
-    container.innerHTML = '';
+    const list = document.getElementById('itemList');
+    list.innerHTML = '';
 
     let filtered = items;
     if(currentFilter !== 'all') {
@@ -185,45 +195,25 @@
     }
 
     if(filtered.length === 0) {
-      container.innerHTML = `<div class="empty-msg">No hay registros pendientes en esta categoría.</div>`;
+      list.innerHTML = `<div class="empty-msg">No hay registros pendientes en esta categoría.</div>`;
       return;
     }
 
-    const grouped = {};
-    filtered.forEach(item => {
-      const d = item.date || 'Anteriores';
-      if (!grouped[d]) grouped[d] = [];
-      grouped[d].push(item);
-    });
+    filtered.forEach(i => {
+      const li = document.createElement('li');
+      li.className = 'item-card';
+      const badgeText = i.type === 'load' ? '📥 CARGA' : '📤 DESCARGA';
+      const badgeClass = i.type === 'load' ? 'badge-load' : 'badge-unload';
 
-    const todayStr = new Date().toISOString().slice(0,10);
-
-    Object.keys(grouped).sort().reverse().forEach(date => {
-      let title = date;
-      if (date === todayStr) title = "📅 Hoy (" + date + ")";
-      else title = "📅 Fecha anterior (" + date + ")";
-
-      const titleDiv = document.createElement('div');
-      titleDiv.className = 'date-group-title';
-      titleDiv.innerText = title;
-      container.appendChild(titleDiv);
-
-      grouped[date].forEach(i => {
-        const li = document.createElement('li');
-        li.className = 'item-card';
-        const badgeText = i.type === 'load' ? '📥 CARGA' : '📤 DESCARGA';
-        const badgeClass = i.type === 'load' ? 'badge-load' : 'badge-unload';
-
-        li.innerHTML = `
-          <div class="item-info">
-            <span class="badge ${badgeClass}">${badgeText} (${i.time})</span>
-            <strong>Código: ${i.code} (Cant: ${i.qty})</strong>
-            <span>Pasillo: ${i.aisle} | Rack: ${i.rack} | Viga: ${i.beam}</span>
-          </div>
-          <button class="btn-danger" onclick="deleteItem(${i.id})">Borrar</button>
-        `;
-        container.appendChild(li);
-      });
+      li.innerHTML = `
+        <div class="item-info">
+          <span class="badge ${badgeClass}">${badgeText} (${i.time})</span>
+          <strong>Código: ${i.code} (Cant: ${i.qty})</strong>
+          <span>Pasillo: ${i.aisle} | Rack: ${i.rack} | Viga: ${i.beam}</span>
+        </div>
+        <button class="btn-danger" onclick="deleteItem(${i.id})">Borrar</button>
+      `;
+      list.appendChild(li);
     });
   }
 
@@ -232,14 +222,14 @@
       alert("No hay datos para exportar.");
       return;
     }
-    let csv = "data:text/csv;charset=utf-8,Fecha,Tipo,Codigo,Cantidad,Pasillo,Rack,Viga,Hora\n";
+    let csv = "data:text/csv;charset=utf-8,Tipo,Codigo,Cantidad,Pasillo,Rack,Viga,Hora\n";
     items.forEach(i => {
-      csv += `${i.date || ''},${i.type === 'load' ? 'Carga' : 'Descarga'},${i.code},${i.qty},${i.aisle},${i.rack},${i.beam},${i.time}\n`;
+      csv += `${i.type === 'load' ? 'Carga' : 'Descarga'},${i.code},${i.qty},${i.aisle},${i.rack},${i.beam},${i.time}\n`;
     });
     const encodedUri = encodeURI(csv);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `jornada_bodega_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute("download", `jornada_inventario_${new Date().toISOString().slice(0,10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
